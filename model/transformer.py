@@ -1,17 +1,19 @@
-'''
+"""
 Author: Xia hanzhong
 Date: 2022-06-04 20:43:31
 LastEditors: a1034 a1034084632@outlook.com
-LastEditTime: 2022-06-13 20:00:11
+LastEditTime: 2022-06-14 20:23:08
 FilePath: /Speech-Emotion-Recognition/model/transformer.py
 Description: 
-'''
+"""
 from model.positional_encoding import *
 import torch.nn.functional as F
+from torch import nn
+import torch
+import math
 
 
 class AR(nn.Module):
-
     def __init__(self, window):
         super(AR, self).__init__()
         self.linear = nn.Linear(window, 1)
@@ -23,10 +25,21 @@ class AR(nn.Module):
 
 
 class TransAm(nn.Module):
-    def __init__(self, feature_size=256, num_layers=3, dropout=0.1, dec_seq_len=1, max_len=100, position='fixed',
-                 adding_module='default', batch_size=32, feature_dim=1, local=None):
+    def __init__(
+        self,
+        feature_size=256,
+        num_layers=3,
+        dropout=0.1,
+        dec_seq_len=1,
+        max_len=100,
+        position="fixed",
+        adding_module="default",
+        batch_size=32,
+        feature_dim=1,
+        local=None,
+    ):
         super(TransAm, self).__init__()
-        self.model_type = 'Transformer'
+        self.model_type = "Transformer"
         self.src_mask = None
         self.bs = batch_size
         self.feature_num = feature_dim
@@ -44,19 +57,29 @@ class TransAm(nn.Module):
 
         # ----------whether transformer encoder layer with batch_norm---------#
 
-        self.encoder_layer = nn.TransformerEncoderLayer(d_model=feature_size, nhead=16, dropout=dropout)
-        self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_layers)
+        self.encoder_layer = nn.TransformerEncoderLayer(
+            d_model=feature_size, nhead=16, dropout=dropout
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            self.encoder_layer, num_layers=num_layers
+        )
 
-        self.decoder_layer = nn.TransformerDecoderLayer(d_model=feature_size, nhead=16, dropout=dropout)
-        self.transformer_decoder = nn.TransformerDecoder(self.decoder_layer, num_layers=dec_seq_len)
+        self.decoder_layer = nn.TransformerDecoderLayer(
+            d_model=feature_size, nhead=16, dropout=dropout
+        )
+        self.transformer_decoder = nn.TransformerDecoder(
+            self.decoder_layer, num_layers=dec_seq_len
+        )
 
         self.tmp_out = nn.Linear(feature_size, 1)
         self.src_key_padding_mask = None
-        self.transformer = nn.Transformer(d_model=self.d_model,
-                                          nhead=8,
-                                          num_encoder_layers=num_layers,
-                                          num_decoder_layers=dec_seq_len,
-                                          dropout=dropout, )
+        self.transformer = nn.Transformer(
+            d_model=self.d_model,
+            nhead=8,
+            num_encoder_layers=num_layers,
+            num_decoder_layers=dec_seq_len,
+            dropout=dropout,
+        )
 
     def _generate_square_subsequent_mask(self, sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
@@ -64,7 +87,11 @@ class TransAm(nn.Module):
         return mask
 
     def new_method(self, mask):
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, 0.0)
+        mask = (
+            mask.float()
+            .masked_fill(mask == 0, float("-inf"))
+            .masked_fill(mask == 1, 0.0)
+        )
 
         return mask
 
@@ -89,7 +116,9 @@ class TransAm(nn.Module):
         # 初始化掩码张量
         mask = self._generate_square_subsequent_mask(tgt.shape[0]).to(device)
 
-        src = self.input_project(src) * math.sqrt(self.d_model)  # for input with feature dim=4
+        src = self.input_project(src) * math.sqrt(
+            self.d_model
+        )  # for input with feature dim=4
         tgt = self.input_project(tgt) * math.sqrt(self.d_model)
         # src:[168 16 64]
         # tgt:[3 16 64]
@@ -103,9 +132,7 @@ class TransAm(nn.Module):
         src = self.pos_encoder(src)  # torch.Size([168,16,64 ])
         tgt = self.pos_encoder(tgt)  # torch,Size(3 16 64)
 
-        x = self.transformer(src=src,
-                             tgt=tgt,
-                             tgt_mask=mask)
+        x = self.transformer(src=src, tgt=tgt, tgt_mask=mask)
 
         transformer_out = self.tmp_out(x)[0, :, :]
         return transformer_out
@@ -121,10 +148,22 @@ class TransAm(nn.Module):
 
 
 class TransAm_audio(nn.Module):
-    def __init__(self, feature_size=512, num_layers=3, dropout=0.1, dec_seq_len=1, max_len=100, position='fixed',
-                 adding_module='default', batch_size=32, feature_dim=1, n_class=7, local=None):
+    def __init__(
+        self,
+        feature_size=512,
+        num_layers=3,
+        dropout=0.1,
+        dec_seq_len=1,
+        max_len=100,
+        position="fixed",
+        adding_module="default",
+        batch_size=32,
+        feature_dim=1,
+        n_class=7,
+        local=None,
+    ):
         super(TransAm_audio, self).__init__()
-        self.model_type = 'Transformer'
+        self.model_type = "Transformer"
         self.src_mask = None
         self.bs = batch_size
         self.feature_num = feature_dim
@@ -142,19 +181,29 @@ class TransAm_audio(nn.Module):
 
         # ----------whether transformer encoder layer with batch_norm---------#
 
-        self.encoder_layer = nn.TransformerEncoderLayer(d_model=feature_size, nhead=16, dropout=dropout)
-        self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_layers)
+        self.encoder_layer = nn.TransformerEncoderLayer(
+            d_model=feature_size, nhead=16, dropout=dropout
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            self.encoder_layer, num_layers=num_layers
+        )
 
-        self.decoder_layer = nn.TransformerDecoderLayer(d_model=feature_size, nhead=16, dropout=dropout)
-        self.transformer_decoder = nn.TransformerDecoder(self.decoder_layer, num_layers=dec_seq_len)
+        self.decoder_layer = nn.TransformerDecoderLayer(
+            d_model=feature_size, nhead=16, dropout=dropout
+        )
+        self.transformer_decoder = nn.TransformerDecoder(
+            self.decoder_layer, num_layers=dec_seq_len
+        )
 
         self.tmp_out = nn.Linear(feature_size, n_class)
         self.src_key_padding_mask = None
-        self.transformer = nn.Transformer(d_model=self.d_model,
-                                          nhead=8,
-                                          num_encoder_layers=num_layers,
-                                          num_decoder_layers=dec_seq_len,
-                                          dropout=dropout, )
+        self.transformer = nn.Transformer(
+            d_model=self.d_model,
+            nhead=8,
+            num_encoder_layers=num_layers,
+            num_decoder_layers=dec_seq_len,
+            dropout=dropout,
+        )
 
     def _generate_square_subsequent_mask(self, sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
@@ -162,7 +211,11 @@ class TransAm_audio(nn.Module):
         return mask
 
     def new_method(self, mask):
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, 0.0)
+        mask = (
+            mask.float()
+            .masked_fill(mask == 0, float("-inf"))
+            .masked_fill(mask == 1, 0.0)
+        )
 
         return mask
 
@@ -187,7 +240,9 @@ class TransAm_audio(nn.Module):
         # 初始化掩码张量
         # mask = self._generate_square_subsequent_mask(tgt.shape[0]).to(device)
 
-        src = self.input_project(src) * math.sqrt(self.d_model)  # for input with feature dim=4
+        src = self.input_project(src) * math.sqrt(
+            self.d_model
+        )  # for input with feature dim=4
         # tgt = self.input_project(tgt) * math.sqrt(self.d_model)
         # src:[168 16 64]
         # tgt:[3 16 64]
@@ -211,9 +266,9 @@ class TransAm_audio(nn.Module):
         return transformer_out
 
 
-if __name__ == '__main__':
-    device = torch.device('cuda')
+if __name__ == "__main__":
+    device = torch.device("cuda")
     model = TransAm(feature_dim=321).to(device)
     test_tensor = torch.randn(16, 168, 321, dtype=torch.float32).to(device)
-    out = model(test_tensor)
-    print(out.shape)
+    # out = model(test_tensor)
+    # print(out.shape)
