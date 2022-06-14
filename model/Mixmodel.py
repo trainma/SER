@@ -1,3 +1,14 @@
+'''
+Author: Xia hanzhong
+Date: 2022-06-05 13:30:38
+LastEditors: a1034 a1034084632@outlook.com
+LastEditTime: 2022-06-13 19:59:44
+FilePath: /Speech-Emotion-Recognition/model/Mixmodel.py
+Description: 
+
+'''
+
+
 import numpy as np
 import torch
 from torch import nn
@@ -48,8 +59,7 @@ class MixModel(nn.Module):
 
         Out = self.dropout(self.leakyRelu(self.linear(Out)))
         Out = self.linear2(Out)
-        prob = self.Softmax(Out)
-        return prob
+        return self.Softmax(Out)
 
 
 if __name__ == '__main__':
@@ -59,4 +69,3 @@ if __name__ == '__main__':
     out = Model(test)
     print(out)
 
-    pass

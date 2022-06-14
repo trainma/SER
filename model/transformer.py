@@ -1,3 +1,11 @@
+'''
+Author: Xia hanzhong
+Date: 2022-06-04 20:43:31
+LastEditors: a1034 a1034084632@outlook.com
+LastEditTime: 2022-06-13 20:00:11
+FilePath: /Speech-Emotion-Recognition/model/transformer.py
+Description: 
+'''
 from model.positional_encoding import *
 import torch.nn.functional as F
 
@@ -52,10 +60,16 @@ class TransAm(nn.Module):
 
     def _generate_square_subsequent_mask(self, sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        mask = self.new_method(mask)
+        return mask
+
+    def new_method(self, mask):
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, 0.0)
+
         return mask
 
     def forward(self, src):
+        # sourcery skip: inline-immediately-returned-variable
         """
         src:torch.Size([600, 32])->torch.Size([150, 32, 4]) [seq_len,batch_size,feature_dim]
         src_key_padding_mask:torch.Size([32, 150]) [batch_size,seq_len]
@@ -144,7 +158,12 @@ class TransAm_audio(nn.Module):
 
     def _generate_square_subsequent_mask(self, sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        mask = self.new_method(mask)
+        return mask
+
+    def new_method(self, mask):
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, 0.0)
+
         return mask
 
     def forward(self, src):
